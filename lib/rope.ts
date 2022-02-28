@@ -172,7 +172,6 @@ function concat(left: IRope, right: IRope): IRope {
 }
 
 export function deleteRange(rope: IRope, start: number, end: number): IRope {
-  // need to fix sizes
   const [left, remaining] = splitAt(rope, start);
   const right = splitAt(remaining, end - start)[1];
   return concat(left, right);
