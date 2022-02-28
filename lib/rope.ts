@@ -167,7 +167,8 @@ function splitAt(rope: IRope, position: number): [IRope, IRope] {
   }
 
   // go right
-  const newPosition = position - (rope.left !== undefined ? rope.left.size() : 0);
+  // should check for null, not undefined
+  const newPosition = position - (rope.left !== null ? rope.left.size() : 0);
   [resLeft, resRight] = splitAt(rope.right, newPosition);
   rope.right = resLeft;
 
@@ -190,6 +191,8 @@ export function insert(rope: IRope, text: string, location: number): IRope {
   return concat(left, newRight);
 }
 
+// basic working version finished after an hour, final pretty version after 90 minutes
+// expect it would've shuffled around the text in the string in some cases ... took me another 10 minutes to fix.
 export function rebalance(rope: IRope): IRope {
   if (!(rope instanceof RopeBranch)) {
     return rope;
@@ -198,52 +201,26 @@ export function rebalance(rope: IRope): IRope {
   rope.left = rebalance(rope.left);
   rope.right = rebalance(rope.right);
 
-  // the higher child must be a RopeBranch
-  let highChild: () => RopeBranch;
-  // let lowChild: () => IRope;
+  let higher: string;
+  let lower: string;
 
-  // Check if left or right is sufficiently larger, and if so set functions to access
+  // Check if left or right is sufficiently larger, and if so set strings to access
   if (rope.leftHeight() > rope.rightHeight() + 1) {
-    console.log('left higher')
-    highChild = () => <RopeBranch>rope.left;
-    // lowChild = () => rope.right;
+    higher = 'left';
+    lower = 'right';
   } else if (rope.rightHeight() > rope.leftHeight() + 1) {
-    console.log('right higher')
-    highChild = () => <RopeBranch>rope.right;
-    // lowChild = () => rope.left;
+    higher = 'right';
+    lower = 'left';
   } else {
     return rope;
   }
 
-  // Figure out if any subtree of highChild() is higher, so as not to need to rebalance again.
-  let higher: IRope;
-  let lower: IRope;
-  if (highChild().leftHeight() > highChild().rightHeight()) {
-    higher = highChild().left;
-    lower = highChild().right;
-  } else {
-    higher = highChild().right;
-    lower = highChild().left;
-  }
-
-
-  const newRoot = highChild();
-
   // Shuffle around the actual nodes.
-  // highChild becomes the new root node, with one of it's nodes (depending on if highChild is left or right) swapped with the old root node.
-  // it should be possible to do this without an extra if statement, but I've yet to figure out how to do it cleanly in js.
-  if (rope.leftHeight() > rope.rightHeight()) {
-    rope.left = lower;
-    newRoot.left = higher;
-    newRoot.right = rope;
-  }
-  else {
-    rope.right = lower;
-    newRoot.right = higher;
-    newRoot.left = rope;
-  }
+  const newRoot = rope[higher];
+  rope[higher] = newRoot[lower];
+  newRoot[lower] = rope;
 
-  // Update the cached size.
+  // Update the cached sizes.
   rope.setSize();
   newRoot.setSize();
   return newRoot;
