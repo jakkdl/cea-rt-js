@@ -190,11 +190,6 @@ export function insert(rope: IRope, text: string, location: number): IRope {
   return concat(left, newRight);
 }
 
-// I said I'd commit a new rebalance in a new branch, but I figured it's easier for you
-// to have it in the same file. But this function was finished approximately an hour
-// after I'd submitted my code. Up to you if you just want to ignore it, but I couldn't
-// resist figuring it out.
-// There's also some very minor refactoring in the remaining code, you can check the commit diff (or checkout that specific commit) if you want to see what it was.
 export function rebalance(rope: IRope): IRope {
   if (!(rope instanceof RopeBranch)) {
     return rope;
