@@ -194,7 +194,7 @@ export function insert(rope: IRope, text: string, location: number): IRope {
 }
 
 // basic working version finished after an hour, final pretty version after 90 minutes
-// expect it would've shuffled around the text in the string in some cases ... took me another 10 minutes to fix.
+// except it would've shuffled around the text in the string in some cases ... took me another 10 minutes to fix.
 export function rebalance(rope: IRope): IRope {
   if (!(rope instanceof RopeBranch)) {
     return rope;
