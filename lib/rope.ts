@@ -3,7 +3,6 @@
 
   The type annotations are just there in case they are helpful.
 */
-
 type MapBranch = {
   left?: MapRepresentation,
   right?: MapRepresentation,
@@ -67,8 +66,12 @@ export class RopeBranch implements IRope {
     this.right = right;
     // Please note that this is defined differently from "weight" in the Wikipedia article.
     // You may wish to rewrite this property or create a different one.
-    this.cachedSize = (left ? left.size() : 0) +
-      (right ? right.size() : 0)
+    this.setSize();
+  }
+
+  setSize() {
+    this.cachedSize = (this.left ? this.left.size() : 0) +
+      (this.right ? this.right.size() : 0)
   }
 
   // how deep the tree is (I.e. the maximum depth of children)
@@ -141,28 +144,32 @@ export function createRopeFromMap(map: MapRepresentation): IRope {
 function splitAt(rope: IRope, position: number): [IRope, IRope] {
   if (rope instanceof RopeLeaf) {
     const right = new RopeLeaf(rope.text.slice(position));
-    (<RopeLeaf>rope).text = rope.text.slice(0, position);
+    rope.text = rope.text.slice(0, position);
     return [rope, right];
   }
+
+  if (!(rope instanceof RopeBranch)) {
+    throw Error('unknown IRope')
+  }
+
   let resLeft: IRope;
   let resRight: IRope;
-  const ropeBranch = <RopeBranch>rope;
 
   // go left
-  if (ropeBranch.size() > position) {
-    [resLeft, resRight] = splitAt(ropeBranch.left, position);
-    const right = new RopeBranch(resRight, ropeBranch.right);
+  if (rope.size() > position) {
+    [resLeft, resRight] = splitAt(rope.left, position);
+    const right = new RopeBranch(resRight, rope.right);
     // modify our size
-    ropeBranch.cachedSize -= resRight.size();
+    rope.cachedSize -= resRight.size();
     // remove our child
-    ropeBranch.right = resLeft;
+    rope.right = resLeft;
     return [rope, right];
   }
 
   // go right
-  const newPosition = position - (ropeBranch.left !== undefined ? ropeBranch.left.size() : 0);
-  [resLeft, resRight] = splitAt(ropeBranch.right, newPosition);
-  ropeBranch.right = resLeft;
+  const newPosition = position - (rope.left !== undefined ? rope.left.size() : 0);
+  [resLeft, resRight] = splitAt(rope.right, newPosition);
+  rope.right = resLeft;
 
   return [rope, resRight];
 }
@@ -183,17 +190,66 @@ export function insert(rope: IRope, text: string, location: number): IRope {
   return concat(left, newRight);
 }
 
+// I said I'd commit a new rebalance in a new branch, but I figured it's easier for you
+// to have it in the same file. But this function was finished approximately an hour
+// after I'd submitted my code. Up to you if you just want to ignore it, but I couldn't
+// resist figuring it out.
+// There's also some very minor refactoring in the remaining code, you can check the commit diff (or checkout that specific commit) if you want to see what it was.
 export function rebalance(rope: IRope): IRope {
-  // check left size
-  // check right size
   if (!(rope instanceof RopeBranch)) {
     return rope;
   }
 
+  rope.left = rebalance(rope.left);
+  rope.right = rebalance(rope.right);
+
+  // the higher child must be a RopeBranch
+  let highChild: () => RopeBranch;
+  // let lowChild: () => IRope;
+
+  // Check if left or right is sufficiently larger, and if so set functions to access
   if (rope.leftHeight() > rope.rightHeight() + 1) {
-    // probably do some split and concat stuff
+    console.log('left higher')
+    highChild = () => <RopeBranch>rope.left;
+    // lowChild = () => rope.right;
   } else if (rope.rightHeight() > rope.leftHeight() + 1) {
-    // probably do some split and concat stuff
+    console.log('right higher')
+    highChild = () => <RopeBranch>rope.right;
+    // lowChild = () => rope.left;
+  } else {
+    return rope;
   }
-  return rope;
+
+  // Figure out if any subtree of highChild() is higher, so as not to need to rebalance again.
+  let higher: IRope;
+  let lower: IRope;
+  if (highChild().leftHeight() > highChild().rightHeight()) {
+    higher = highChild().left;
+    lower = highChild().right;
+  } else {
+    higher = highChild().right;
+    lower = highChild().left;
+  }
+
+
+  const newRoot = highChild();
+
+  // Shuffle around the actual nodes.
+  // highChild becomes the new root node, with one of it's nodes (depending on if highChild is left or right) swapped with the old root node.
+  // it should be possible to do this without an extra if statement, but I've yet to figure out how to do it cleanly in js.
+  if (rope.leftHeight() > rope.rightHeight()) {
+    rope.left = lower;
+    newRoot.left = higher;
+    newRoot.right = rope;
+  }
+  else {
+    rope.right = lower;
+    newRoot.right = higher;
+    newRoot.left = rope;
+  }
+
+  // Update the cached size.
+  rope.setSize();
+  newRoot.setSize();
+  return newRoot;
 }
