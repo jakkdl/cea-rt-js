@@ -75,7 +75,7 @@ export class RopeBranch implements IRope {
   height(): number {
     return 1 + Math.max(this.leftHeight(), this.rightHeight())
   }
-  
+
   // Please note that this is defined differently from "weight" in the Wikipedia article.
   // You may wish to rewrite this method or create a different one.
   size() {
@@ -84,7 +84,7 @@ export class RopeBranch implements IRope {
 
   /*
     Whether the rope is balanced, i.e. whether any subtrees have branches
-    which differ by more than one in height. 
+    which differ by more than one in height.
   */
   isBalanced(): boolean {
     const leftBalanced = this.left ? this.left.isBalanced() : true
@@ -105,7 +105,7 @@ export class RopeBranch implements IRope {
   }
 
   // Helper method which converts the rope into an associative array
-  // 
+  //
   // Only used for debugging, this has no functional purpose
   toMap(): MapBranch {
     const mapVersion: MapBranch = {
@@ -135,20 +135,74 @@ export function createRopeFromMap(map: MapRepresentation): IRope {
   return new RopeBranch(left, right);
 }
 
-// This is an internal API. You can implement it however you want. 
+// This is an internal API. You can implement it however you want.
 // (E.g. you can choose to mutate the input rope or not)
-function splitAt(rope: IRope, position: number): { left: IRope, right: IRope } {
-  // TODO
+// We put character @ position in the right tree
+function splitAt(rope: IRope, position: number): [IRope, IRope] {
+  if (rope instanceof RopeLeaf) {
+    const right = new RopeLeaf(rope.text.slice(position));
+    (<RopeLeaf>rope).text = rope.text.slice(0, position);
+    return [rope, right];
+  }
+  let resLeft: IRope;
+  let resRight: IRope;
+  const ropeBranch = <RopeBranch>rope;
+
+  // go left
+  //
+  if (ropeBranch.size() > position) {
+    [resLeft, resRight] = splitAt(ropeBranch.left, position);
+    const right = new RopeBranch(resRight, ropeBranch.right);
+    // modify our size
+    ropeBranch.cachedSize -= resRight.size();
+    // remove our child
+    ropeBranch.right = resLeft;
+    return [rope, right];
+  }
+
+  // go right
+  const newPosition = position - (ropeBranch.left !== undefined ? ropeBranch.left.size() : 0);
+  [resLeft, resRight] = splitAt(ropeBranch.right, newPosition);
+  ropeBranch.right = resLeft;
+
+  // modify our size
+  ropeBranch.cachedSize -= 0;
+
+  return [rope, resRight];
+
+  // travel up the tree (recursion) and remove any right links to subtrees
+  // covering characters past position, [subtracting the weight of the removed node]
+  // create a new RopeBranch
+}
+
+function concat(left: IRope, right: IRope): IRope {
+  return new RopeBranch(left, right);
 }
 
 export function deleteRange(rope: IRope, start: number, end: number): IRope {
-  // TODO
+  // need to fix sizes
+  const [left, remaining] = splitAt(rope, start);
+  const right = splitAt(remaining, end - start)[1];
+  return concat(left, right);
 }
 
 export function insert(rope: IRope, text: string, location: number): IRope {
-  // TODO
+  const [left, right] = splitAt(rope, location);
+  const newRight = concat(new RopeLeaf(text), right);
+  return concat(left, newRight);
 }
 
 export function rebalance(rope: IRope): IRope {
-  // TODO
+  // check left size
+  // check right size
+  if (!(rope instanceof RopeBranch)) {
+    return rope;
+  }
+
+  if (rope.leftHeight() > rope.rightHeight() + 1) {
+    // probably do some split and concat stuff
+  } else if (rope.rightHeight() > rope.leftHeight() + 1) {
+    // probably do some split and concat stuff
+  }
+  return rope;
 }

@@ -8,13 +8,13 @@ const createLeaf = (text) => createRopeFromMap({
   kind: 'leaf'
 })
 
-/* 
+/*
   These tests are here as a starting point, they are not comprehensive
 */
 describe("rope basics", () => {
   test("leaf constructor", () => expect(createLeaf('test').toString()).toEqual('test'));
   test("leaf size", () => expect(createLeaf('test').size()).toEqual(4));
-  
+
   const branch = createRopeFromMap({
     kind: 'branch',
     left: {
@@ -42,12 +42,13 @@ describe("rope basics", () => {
 
 describe("insertion", () => {
   test("simple insertion", () => expect(insert(createLeaf('test'), '123', 2).toString()).toEqual('te123st'));
+  test("weird size insertion", () => expect(insert(createRopeFromMap({kind: 'branch', left: { kind: 'leaf', text: '1'}, right: { kind: 'leaf', text: '2'}}), 'abc', 2).toString()).toEqual('12abc'));
   test("ending insertion", () => expect(insert(createLeaf('test'), '123', 4).toString()).toEqual('test123'));
   test("beginning insertion", () => expect(insert(createLeaf('test'), '123', 0).toString()).toEqual('123test'));
 });
 
 describe("deletion", () => {
-  test("simple deletion", () => expect(deleteRange(createLeaf('test'), 1, 3).toString()).toEqual('tt'));
+  test("simple deletion", () => expect(deleteRange(createLeaf('abcd'), 1, 3).toString()).toEqual('ad'));
   test("delete until end", () => expect(deleteRange(createLeaf('test'), 2, 4).toString()).toEqual('te'));
   test("delete beginning", () => expect(deleteRange(createLeaf('test'), 0, 2).toString()).toEqual('st'));
   test("delete then insert", () => expect(insert(deleteRange(createLeaf('test'), 1, 3), 'abc', 2).toString()).toEqual('ttabc'));
