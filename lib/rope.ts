@@ -165,9 +165,6 @@ function splitAt(rope: IRope, position: number): [IRope, IRope] {
   [resLeft, resRight] = splitAt(ropeBranch.right, newPosition);
   ropeBranch.right = resLeft;
 
-  // modify our size
-  ropeBranch.cachedSize -= 0;
-
   return [rope, resRight];
 
   // travel up the tree (recursion) and remove any right links to subtrees
