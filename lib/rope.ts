@@ -141,38 +141,40 @@ export function createRopeFromMap(map: MapRepresentation): IRope {
 // This is an internal API. You can implement it however you want.
 // (E.g. you can choose to mutate the input rope or not)
 // We put character @ position in the right tree
-function splitAt(rope: IRope, position: number): [IRope, IRope] {
+function splitAt(rope: IRope, position: number): {left: IRope, right: IRope} {
+  let newRight: IRope;
   if (rope instanceof RopeLeaf) {
-    const right = new RopeLeaf(rope.text.slice(position));
+    newRight = new RopeLeaf(rope.text.slice(position));
     rope.text = rope.text.slice(0, position);
-    return [rope, right];
+  }
+  else {
+
+    if (!(rope instanceof RopeBranch)) {
+      throw Error('unknown IRope')
+    }
+
+    //let left: IRope;
+    //let right: IRope;
+
+    // go left
+    if (rope.size() > position) {
+      let {left, right} = splitAt(rope.left, position);
+      newRight = new RopeBranch(right, rope.right);
+      // modify our size
+      rope.cachedSize -= right.size();
+      // remove our child
+      rope.right = left;
+    } else {
+      // go right
+      // should check for null, not undefined
+      const newPosition = position - (rope.left !== null ? rope.left.size() : 0);
+      let {left, right} = splitAt(rope.right, newPosition);
+      newRight = right;
+      rope.right = left;
+    }
   }
 
-  if (!(rope instanceof RopeBranch)) {
-    throw Error('unknown IRope')
-  }
-
-  let resLeft: IRope;
-  let resRight: IRope;
-
-  // go left
-  if (rope.size() > position) {
-    [resLeft, resRight] = splitAt(rope.left, position);
-    const right = new RopeBranch(resRight, rope.right);
-    // modify our size
-    rope.cachedSize -= resRight.size();
-    // remove our child
-    rope.right = resLeft;
-    return [rope, right];
-  }
-
-  // go right
-  // should check for null, not undefined
-  const newPosition = position - (rope.left !== null ? rope.left.size() : 0);
-  [resLeft, resRight] = splitAt(rope.right, newPosition);
-  rope.right = resLeft;
-
-  return [rope, resRight];
+  return {left: rope, right: newRight};
 }
 
 function concat(left: IRope, right: IRope): IRope {
@@ -180,13 +182,13 @@ function concat(left: IRope, right: IRope): IRope {
 }
 
 export function deleteRange(rope: IRope, start: number, end: number): IRope {
-  const [left, remaining] = splitAt(rope, start);
-  const right = splitAt(remaining, end - start)[1];
-  return concat(left, right);
+  const {left, right} = splitAt(rope, start);
+  const newRight = splitAt(right, end - start).right;
+  return concat(left, newRight);
 }
 
 export function insert(rope: IRope, text: string, location: number): IRope {
-  const [left, right] = splitAt(rope, location);
+  const {left, right} = splitAt(rope, location);
   const newRight = concat(new RopeLeaf(text), right);
   return concat(left, newRight);
 }
