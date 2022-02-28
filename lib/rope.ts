@@ -69,9 +69,16 @@ export class RopeBranch implements IRope {
     this.setSize();
   }
 
+  leftSize() {
+    return (this.left ? this.left.size() : 0);
+  }
+
+  rightSize() {
+    return (this.right ? this.right.size() : 0);
+  }
+
   setSize() {
-    this.cachedSize = (this.left ? this.left.size() : 0) +
-      (this.right ? this.right.size() : 0)
+    this.cachedSize = this.leftSize() + this.rightSize();
   }
 
   // how deep the tree is (I.e. the maximum depth of children)
@@ -143,22 +150,17 @@ export function createRopeFromMap(map: MapRepresentation): IRope {
 // We put character @ position in the right tree
 function splitAt(rope: IRope, position: number): {left: IRope, right: IRope} {
   let newRight: IRope;
+
   if (rope instanceof RopeLeaf) {
     newRight = new RopeLeaf(rope.text.slice(position));
     rope.text = rope.text.slice(0, position);
   }
-  else {
-
-    if (!(rope instanceof RopeBranch)) {
+  else if (!(rope instanceof RopeBranch)) {
       throw Error('unknown IRope')
-    }
-
-    //let left: IRope;
-    //let right: IRope;
-
+  } else {
     // go left
     if (rope.size() > position) {
-      let {left, right} = splitAt(rope.left, position);
+      const {left, right} = splitAt(rope.left, position);
       newRight = new RopeBranch(right, rope.right);
       // modify our size
       rope.cachedSize -= right.size();
@@ -166,9 +168,8 @@ function splitAt(rope: IRope, position: number): {left: IRope, right: IRope} {
       rope.right = left;
     } else {
       // go right
-      // should check for null, not undefined
-      const newPosition = position - (rope.left !== null ? rope.left.size() : 0);
-      let {left, right} = splitAt(rope.right, newPosition);
+      const newPosition = position - rope.leftSize();
+      const {left, right} = splitAt(rope.right, newPosition);
       newRight = right;
       rope.right = left;
     }
