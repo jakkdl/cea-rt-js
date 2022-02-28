@@ -149,7 +149,6 @@ function splitAt(rope: IRope, position: number): [IRope, IRope] {
   const ropeBranch = <RopeBranch>rope;
 
   // go left
-  //
   if (ropeBranch.size() > position) {
     [resLeft, resRight] = splitAt(ropeBranch.left, position);
     const right = new RopeBranch(resRight, ropeBranch.right);
@@ -166,10 +165,6 @@ function splitAt(rope: IRope, position: number): [IRope, IRope] {
   ropeBranch.right = resLeft;
 
   return [rope, resRight];
-
-  // travel up the tree (recursion) and remove any right links to subtrees
-  // covering characters past position, [subtracting the weight of the removed node]
-  // create a new RopeBranch
 }
 
 function concat(left: IRope, right: IRope): IRope {
