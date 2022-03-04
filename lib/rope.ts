@@ -145,9 +145,7 @@ export function createRopeFromMap(map: MapRepresentation): IRope {
   return new RopeBranch(left, right);
 }
 
-// This is an internal API. You can implement it however you want.
-// (E.g. you can choose to mutate the input rope or not)
-// We put character @ position in the right tree
+// We put character @ "position" in the right tree
 function splitAt(rope: IRope, position: number): {left: IRope, right: IRope} {
   let newRight: IRope;
 
@@ -158,14 +156,17 @@ function splitAt(rope: IRope, position: number): {left: IRope, right: IRope} {
   else if (!(rope instanceof RopeBranch)) {
       throw Error('unknown IRope')
   } else {
-    // go left
-    if (rope.size() > position) {
+    if (rope.leftSize() > position) {
+      // go left
       const {left, right} = splitAt(rope.left, position);
       newRight = new RopeBranch(right, rope.right);
       // modify our size
       rope.cachedSize -= right.size();
+
+      // update left with what's left of it
+      rope.left = left;
       // remove our child
-      rope.right = left;
+      rope.right = null;
     } else {
       // go right
       const newPosition = position - rope.leftSize();
@@ -190,6 +191,7 @@ export function deleteRange(rope: IRope, start: number, end: number): IRope {
 
 export function insert(rope: IRope, text: string, location: number): IRope {
   const {left, right} = splitAt(rope, location);
+  console.log(left, right);
   const newRight = concat(new RopeLeaf(text), right);
   return concat(left, newRight);
 }

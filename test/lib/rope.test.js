@@ -41,11 +41,95 @@ describe("rope basics", () => {
 });
 
 describe("insertion", () => {
-  test("simple insertion", () => expect(insert(createLeaf('test'), '123', 2).toString()).toEqual('te123st'));
+  test("insertion 0", () => expect(insert(createLeaf('test'), '123', 0).toString()).toEqual('123test'));
+  test("insertion 1", () => expect(insert(createLeaf('test'), '123', 1).toString()).toEqual('t123est'));
+  test("insertion 2", () => expect(insert(createLeaf('test'), '123', 2).toString()).toEqual('te123st'));
+  test("insertion 3", () => expect(insert(createLeaf('test'), '123', 3).toString()).toEqual('tes123t'));
+  test("insertion 4", () => expect(insert(createLeaf('test'), '123', 4).toString()).toEqual('test123'));
   test("weird size insertion", () => expect(insert(createRopeFromMap({kind: 'branch', left: { kind: 'leaf', text: '1'}, right: { kind: 'leaf', text: '2'}}), 'abc', 2).toString()).toEqual('12abc'));
-  test("ending insertion", () => expect(insert(createLeaf('test'), '123', 4).toString()).toEqual('test123'));
-  test("beginning insertion", () => expect(insert(createLeaf('test'), '123', 0).toString()).toEqual('123test'));
 });
+
+const smallBranch = () => createRopeFromMap({
+  kind: 'branch',
+  left: { kind: 'leaf', text: 'ab' },
+  right: { kind: 'leaf', text: 'cd'},
+})
+
+describe('insertion smallBranch', () => {
+  test("insertion 0", () => expect(insert(smallBranch(), '1', 0).toString()).toEqual('1abcd'));
+  test("insertion 1", () => expect(insert(smallBranch(), '1', 1).toString()).toEqual('a1bcd'));
+  test("insertion 2", () => expect(insert(smallBranch(), '1', 2).toString()).toEqual('ab1cd'));
+  test("insertion 3", () => expect(insert(smallBranch(), '1', 3).toString()).toEqual('abc1d'));
+  test("insertion 4", () => expect(insert(smallBranch(), '1', 4).toString()).toEqual('abcd1'));
+})
+
+const abcdBranch = () => createRopeFromMap({
+    kind: 'branch',
+    left: { kind: 'leaf', text: 'a' },
+    right: {
+      kind: 'branch',
+      left: { kind: 'leaf', text: 'b' },
+      right: {
+        kind: 'branch',
+        left: { kind: 'leaf', text: 'c' },
+        right: { kind: 'leaf', text: 'd' }
+      }
+    },
+  })
+describe("insertion into branch", () => {
+  test("branch insertion 0", () => expect(insert(abcdBranch(), '1', 0).toString()).toEqual('1abcd'));
+  test("branch insertion 1", () => expect(insert(abcdBranch(), '1', 1).toString()).toEqual('a1bcd'));
+  test("branch insertion 2", () => expect(insert(abcdBranch(), '1', 2).toString()).toEqual('ab1cd'));
+  test("branch insertion 3", () => expect(insert(abcdBranch(), '1', 3).toString()).toEqual('abc1d'));
+  test("branch insertion 4", () => expect(insert(abcdBranch(), '1', 4).toString()).toEqual('abcd1'));
+})
+
+const balancedAbcdBranch = () => createRopeFromMap({
+    kind: 'branch',
+    left: {
+      kind: 'branch',
+      left: { kind: 'leaf', text: 'a' },
+      right: { kind: 'leaf', text: 'b' },
+    },
+    right: {
+      kind: 'branch',
+      left: { kind: 'leaf', text: 'c' },
+      right: { kind: 'leaf', text: 'd' },
+    },
+  })
+describe("insertion into balanced branch", () => {
+  test("branch insertion 0", () => expect(insert(balancedAbcdBranch(), '1', 0).toString()).toEqual('1abcd'));
+  test("branch insertion 1", () => expect(insert(balancedAbcdBranch(), '1', 1).toString()).toEqual('a1bcd'));
+  test("branch insertion 2", () => expect(insert(balancedAbcdBranch(), '1', 2).toString()).toEqual('ab1cd'));
+  test("branch insertion 3", () => expect(insert(balancedAbcdBranch(), '1', 3).toString()).toEqual('abc1d'));
+  test("branch insertion 4", () => expect(insert(balancedAbcdBranch(), '1', 4).toString()).toEqual('abcd1'));
+})
+
+const abcdefghBranch = () => createRopeFromMap({
+    kind: 'branch',
+    left: {
+      kind: 'branch',
+      left: { kind: 'leaf', text: 'ab' },
+      right: { kind: 'leaf', text: 'cd' },
+    },
+    right: {
+      kind: 'branch',
+      left: { kind: 'leaf', text: 'ef' },
+      right: { kind: 'leaf', text: 'gh' },
+    },
+  })
+
+describe("insertion into two-letter branch", () => {
+  test("branch insertion 0", () => expect(insert(abcdefghBranch(), '1', 0).toString()).toEqual('1abcdefgh'));
+  test("branch insertion 1", () => expect(insert(abcdefghBranch(), '1', 1).toString()).toEqual('a1bcdefgh'));
+  test("branch insertion 2", () => expect(insert(abcdefghBranch(), '1', 2).toString()).toEqual('ab1cdefgh'));
+  test("branch insertion 3", () => expect(insert(abcdefghBranch(), '1', 3).toString()).toEqual('abc1defgh'));
+  test("branch insertion 4", () => expect(insert(abcdefghBranch(), '1', 4).toString()).toEqual('abcd1efgh'));
+  test("branch insertion 5", () => expect(insert(abcdefghBranch(), '1', 5).toString()).toEqual('abcde1fgh'));
+  test("branch insertion 6", () => expect(insert(abcdefghBranch(), '1', 6).toString()).toEqual('abcdef1gh'));
+  test("branch insertion 7", () => expect(insert(abcdefghBranch(), '1', 7).toString()).toEqual('abcdefg1h'));
+  test("branch insertion 8", () => expect(insert(abcdefghBranch(), '1', 8).toString()).toEqual('abcdefgh1'));
+})
 
 describe("deletion", () => {
   test("simple deletion", () => expect(deleteRange(createLeaf('abcd'), 1, 3).toString()).toEqual('ad'));
