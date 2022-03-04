@@ -4,6 +4,8 @@
   The type annotations are just there in case they are helpful.
 */
 
+/* eslint-disable max-classes-per-file */
+
 type MapBranch = {
   left?: MapRepresentation,
   right?: MapRepresentation,
@@ -67,8 +69,8 @@ export class RopeBranch implements IRope {
     this.right = right;
     // Please note that this is defined differently from "weight" in the Wikipedia article.
     // You may wish to rewrite this property or create a different one.
-    this.cachedSize = (left ? left.size() : 0) +
-      (right ? right.size() : 0)
+    this.cachedSize = ((left ? left.size() : 0)
+                       + (right ? right.size() : 0))
   }
 
   // how deep the tree is (I.e. the maximum depth of children)
@@ -149,13 +151,14 @@ function splitAt(rope: IRope, position: number): [IRope, IRope] {
   const ropeBranch = <RopeBranch>rope;
 
   // go left
-  if (ropeBranch.size() > position) {
+  if (ropeBranch.left && ropeBranch.left.size() > position) {
     [resLeft, resRight] = splitAt(ropeBranch.left, position);
     const right = new RopeBranch(resRight, ropeBranch.right);
     // modify our size
     ropeBranch.cachedSize -= resRight.size();
     // remove our child
-    ropeBranch.right = resLeft;
+    ropeBranch.left = resLeft;
+    ropeBranch.right = null;
     return [rope, right];
   }
 
@@ -163,6 +166,7 @@ function splitAt(rope: IRope, position: number): [IRope, IRope] {
   const newPosition = position - (ropeBranch.left !== undefined ? ropeBranch.left.size() : 0);
   [resLeft, resRight] = splitAt(ropeBranch.right, newPosition);
   ropeBranch.right = resLeft;
+  ropeBranch.cachedSize -= resRight.size();
 
   return [rope, resRight];
 }
