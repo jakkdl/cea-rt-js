@@ -160,8 +160,6 @@ function splitAt(rope: IRope, position: number): {left: IRope, right: IRope} {
       // go left
       const {left, right} = splitAt(rope.left, position);
       newRight = new RopeBranch(right, rope.right);
-      // modify our size
-      rope.cachedSize -= right.size();
 
       // update left with what's left of it
       rope.left = left;
@@ -174,6 +172,8 @@ function splitAt(rope: IRope, position: number): {left: IRope, right: IRope} {
       newRight = right;
       rope.right = left;
     }
+    // modify our size
+    rope.cachedSize -= newRight.size();
   }
 
   return {left: rope, right: newRight};
@@ -191,7 +191,6 @@ export function deleteRange(rope: IRope, start: number, end: number): IRope {
 
 export function insert(rope: IRope, text: string, location: number): IRope {
   const {left, right} = splitAt(rope, location);
-  console.log(left, right);
   const newRight = concat(new RopeLeaf(text), right);
   return concat(left, newRight);
 }
